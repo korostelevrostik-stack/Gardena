@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>🌿 Сад-Кликер</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- Шапка -->
+    <div class="header">
+        <div class="coins">🪙 <span id="coinDisplay">0.0</span></div>
+        <button id="closeBtn" class="close-btn">✕</button>
+    </div>
+
+    <!-- Грядка 4x4 -->
+    <div class="garden-grid" id="gardenGrid"></div>
+
+    <!-- ОГРОМНАЯ КНОПКА ДЛЯ КЛИКА -->
+    <div class="ground" id="ground">
+        <div class="ground-emoji">🌍</div>
+        <div class="ground-text">ТЫКАЙ СЮДА!</div>
+        <div class="float-text" id="floatText"></div>
+    </div>
+
+    <!-- Магазин (10 растений) -->
+    <div class="shop" id="shop">
+        <!-- Заполняется скриптом -->
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
