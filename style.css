@@ -1,0 +1,212 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    background: #0f1f0f;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    color: #f0f7d4;
+    overflow-x: hidden;
+}
+
+/* Шапка */
+.header {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 14px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+}
+
+.coins {
+    font-size: 22px;
+    font-weight: 700;
+    background: #f7c948;
+    color: #2d2d1c;
+    padding: 4px 18px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(247, 201, 72, 0.3);
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.close-btn:hover { background: rgba(255, 80, 80, 0.4); }
+
+/* Грядка 4x4 */
+.garden-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1/1;
+    background: #2d4a2d;
+    padding: 8px;
+    border-radius: 16px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+    margin-bottom: 8px;
+}
+
+.cell {
+    background: #3d5e3d;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    cursor: pointer;
+    transition: 0.1s;
+    box-shadow: inset 0 -3px 0 #1f331f;
+    aspect-ratio: 1/1;
+    position: relative;
+}
+.cell:active { transform: scale(0.93); }
+.cell.empty { background: #345634; }
+.cell .plant-emoji { font-size: 38px; }
+.cell .grow-timer {
+    position: absolute;
+    bottom: 2px;
+    font-size: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 0 6px;
+    border-radius: 8px;
+    color: #ffd966;
+}
+
+/* ОГРОМНАЯ КНОПКА-ЗЕМЛЯ */
+.ground {
+    width: 100%;
+    max-width: 420px;
+    background: radial-gradient(circle at 30% 30%, #8b6b4a, #5a3f2b);
+    border-radius: 24px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 6px 0 #3d2b1f, 0 10px 40px rgba(0,0,0,0.5);
+    transition: 0.05s linear;
+    margin-bottom: 8px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.ground:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #3d2b1f;
+}
+.ground-emoji {
+    font-size: 64px;
+    display: block;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+}
+.ground-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffedd5;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    letter-spacing: 2px;
+    margin-top: 4px;
+}
+
+/* Всплывающий текст (+0.3) */
+.float-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+.float-item {
+    position: absolute;
+    font-size: 30px;
+    font-weight: 800;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ff8c00, 0 0 40px #ff6600;
+    animation: floatUp 0.8s ease-out forwards;
+}
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(0.8); }
+    100% { opacity: 0; transform: translateY(-100px) scale(1.4); }
+}
+
+/* Магазин - 10 растений в ряд */
+.shop {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.shop-btn {
+    background: #2a472a;
+    border: none;
+    color: #f0f7d4;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.15s;
+    box-shadow: 0 2px 0 #172717;
+    flex: 1 0 calc(20% - 6px);
+    min-width: 60px;
+    max-width: 80px;
+    text-align: center;
+}
+.shop-btn:active { transform: scale(0.92); }
+.shop-btn .plant-emoji { font-size: 22px; display: block; }
+.shop-btn .plant-name { font-size: 10px; display: block; opacity: 0.8; }
+.shop-btn .cost {
+    font-size: 10px;
+    color: #ffd966;
+    display: block;
+}
+.shop-btn:disabled {
+    opacity: 0.35;
+    filter: grayscale(0.8);
+    pointer-events: none;
+}
+.shop-btn.selected {
+    outline: 3px solid #ffd700;
+    background: #3d6b3d;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+/* скролл */
+.shop::-webkit-scrollbar {
+    width: 3px;
+}
+.shop::-webkit-scrollbar-thumb {
+    background: #5a7a5a;
+    border-radius: 10px;
+}
