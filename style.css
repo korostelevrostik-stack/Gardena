@@ -6,131 +6,208 @@
 }
 
 body {
-    background: #0f1f0f;
+    background: #0a150a;
     font-family: 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 10px;
-    color: #f0f7d4;
-    overflow-x: hidden;
+    color: #e8f0d0;
 }
 
-/* Шапка */
+/* ===== ШАПКА ===== */
 .header {
     width: 100%;
     max-width: 420px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 14px;
     border-radius: 14px;
     margin-bottom: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #8bc34a;
+    letter-spacing: 1px;
 }
 
 .coins {
-    font-size: 22px;
-    font-weight: 700;
-    background: #f7c948;
-    color: #2d2d1c;
-    padding: 4px 18px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(145deg, #f7d44a, #e6a800);
+    padding: 4px 14px 4px 10px;
     border-radius: 30px;
-    box-shadow: 0 2px 10px rgba(247, 201, 72, 0.3);
+    box-shadow: 
+        0 2px 10px rgba(247, 201, 72, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    color: #1f2a0f;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.coin-icon {
+    font-size: 22px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.coin-value {
+    min-width: 40px;
+    text-align: center;
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     border: none;
-    color: #fff;
-    font-size: 22px;
-    width: 38px;
-    height: 38px;
+    color: #aaa;
+    font-size: 20px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     cursor: pointer;
+    transition: 0.2s;
 }
-.close-btn:hover { background: rgba(255, 80, 80, 0.4); }
+.close-btn:hover { background: rgba(255, 80, 80, 0.3); color: #fff; }
 
-/* Грядка 4x4 */
+/* ===== ГРЯДКА ===== */
 .garden-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    gap: 5px;
     width: 100%;
     max-width: 420px;
     aspect-ratio: 1/1;
-    background: #2d4a2d;
-    padding: 8px;
-    border-radius: 16px;
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+    background: #1a2e1a;
+    padding: 6px;
+    border-radius: 14px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
     margin-bottom: 8px;
 }
 
 .cell {
-    background: #3d5e3d;
-    border-radius: 10px;
+    background: #253d25;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 28px;
     cursor: pointer;
     transition: 0.1s;
-    box-shadow: inset 0 -3px 0 #1f331f;
+    box-shadow: inset 0 -2px 0 #162216;
     aspect-ratio: 1/1;
     position: relative;
 }
-.cell:active { transform: scale(0.93); }
-.cell.empty { background: #345634; }
-.cell .plant-emoji { font-size: 38px; }
-.cell .grow-timer {
+.cell:active { transform: scale(0.92); }
+.cell.empty { background: #1f331f; }
+.cell .plant-emoji { font-size: 32px; z-index: 1; }
+
+/* ===== КРУГОВОЙ ПРОГРЕСС-БАР ДЛЯ РАСТЕНИЙ ===== */
+.cell .progress-ring {
     position: absolute;
-    bottom: 2px;
-    font-size: 10px;
-    background: rgba(0,0,0,0.7);
-    padding: 0 6px;
-    border-radius: 8px;
-    color: #ffd966;
+    top: -2px;
+    left: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    transform: rotate(-90deg);
 }
 
-/* ОГРОМНАЯ КНОПКА-ЗЕМЛЯ */
-.ground {
+.cell .progress-ring .bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 3;
+}
+
+.cell .progress-ring .bar {
+    fill: none;
+    stroke: #ffd700;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.3s ease;
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+}
+
+/* ===== ГОТОВОЕ РАСТЕНИЕ (подсветка) ===== */
+.cell.ready {
+    animation: glowPulse 1.5s ease-in-out infinite;
+}
+@keyframes glowPulse {
+    0%, 100% { box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1); }
+    50% { box-shadow: inset 0 0 30px rgba(255, 215, 0, 0.35); }
+}
+
+/* ===== 3D КНОПКА-КЛИКЕР ===== */
+.ground-3d {
     width: 100%;
     max-width: 420px;
-    background: radial-gradient(circle at 30% 30%, #8b6b4a, #5a3f2b);
     border-radius: 24px;
-    padding: 28px 20px;
-    text-align: center;
+    padding: 4px;
+    margin-bottom: 8px;
+    background: linear-gradient(145deg, #4d3520, #2a1a0e);
+    box-shadow: 0 8px 0 #1a0f08, 0 12px 40px rgba(0,0,0,0.7);
     cursor: pointer;
     position: relative;
-    box-shadow: 0 6px 0 #3d2b1f, 0 10px 40px rgba(0,0,0,0.5);
-    transition: 0.05s linear;
-    margin-bottom: 8px;
-    min-height: 140px;
+    transition: all 0.06s ease;
+}
+
+.ground-3d:active {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #1a0f08, 0 8px 30px rgba(0,0,0,0.6);
+}
+
+.ground-inner {
+    background: radial-gradient(ellipse at 30% 30%, #8b6b4a, #5a3f2b);
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 130px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
-.ground:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #3d2b1f;
-}
-.ground-emoji {
-    font-size: 64px;
-    display: block;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
-}
-.ground-text {
-    font-size: 22px;
-    font-weight: 700;
-    color: #ffedd5;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-    letter-spacing: 2px;
-    margin-top: 4px;
+
+.ground-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(255, 215, 140, 0.15), transparent 60%);
+    pointer-events: none;
 }
 
-/* Всплывающий текст (+0.3) */
+.ground-emoji {
+    font-size: 56px;
+    display: block;
+    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.5));
+    z-index: 1;
+    animation: floatEmoji 2s ease-in-out infinite;
+}
+
+@keyframes floatEmoji {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.ground-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffedd5;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6), 0 0 30px rgba(255, 200, 100, 0.1);
+    letter-spacing: 2px;
+    z-index: 1;
+    margin-top: 2px;
+}
+
+/* Всплывающие монетки */
 .float-text {
     position: absolute;
     top: 0;
@@ -139,74 +216,93 @@ body {
     height: 100%;
     pointer-events: none;
     overflow: hidden;
+    z-index: 10;
 }
 .float-item {
     position: absolute;
     font-size: 30px;
     font-weight: 800;
     color: #ffd700;
-    text-shadow: 0 0 20px #ff8c00, 0 0 40px #ff6600;
-    animation: floatUp 0.8s ease-out forwards;
+    text-shadow: 
+        0 0 20px #ff8800,
+        0 0 60px #ff5500,
+        0 4px 8px rgba(0,0,0,0.4);
+    animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
 }
 @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0) scale(0.8); }
-    100% { opacity: 0; transform: translateY(-100px) scale(1.4); }
+    0% { opacity: 1; transform: translateY(0) scale(0.5) rotate(-10deg); }
+    50% { transform: translateY(-50px) scale(1.2) rotate(5deg); }
+    100% { opacity: 0; transform: translateY(-100px) scale(1) rotate(0deg); }
 }
 
-/* Магазин - 10 растений в ряд */
+/* ===== МАГАЗИН (СТОЛБИК) ===== */
 .shop {
     width: 100%;
     max-width: 420px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
     background: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-radius: 16px;
+    padding: 8px 10px;
+    border-radius: 14px;
     max-height: 200px;
     overflow-y: auto;
+    backdrop-filter: blur(5px);
 }
 
 .shop-btn {
-    background: #2a472a;
-    border: none;
-    color: #f0f7d4;
-    padding: 6px 10px;
-    border-radius: 12px;
-    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #e8f0d0;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 15px;
     cursor: pointer;
-    transition: 0.15s;
-    box-shadow: 0 2px 0 #172717;
-    flex: 1 0 calc(20% - 6px);
-    min-width: 60px;
-    max-width: 80px;
-    text-align: center;
+    transition: 0.2s;
+    width: 100%;
+    text-align: left;
 }
-.shop-btn:active { transform: scale(0.92); }
-.shop-btn .plant-emoji { font-size: 22px; display: block; }
-.shop-btn .plant-name { font-size: 10px; display: block; opacity: 0.8; }
-.shop-btn .cost {
-    font-size: 10px;
+.shop-btn:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.1); }
+
+.shop-btn .shop-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.shop-btn .shop-emoji { font-size: 22px; }
+.shop-btn .shop-name { font-size: 14px; }
+
+.shop-btn .shop-cost {
     color: #ffd966;
-    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
+
 .shop-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.25;
     filter: grayscale(0.8);
     pointer-events: none;
 }
+
 .shop-btn.selected {
-    outline: 3px solid #ffd700;
-    background: #3d6b3d;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.12);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.08);
 }
 
-/* скролл */
 .shop::-webkit-scrollbar {
     width: 3px;
 }
 .shop::-webkit-scrollbar-thumb {
-    background: #5a7a5a;
+    background: #4a6a4a;
     border-radius: 10px;
+}
+.shop::-webkit-scrollbar-track {
+    background: transparent;
 }
