@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>MEGA GARDEN 4</title>
+    <title>OUR GARDEN</title>
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,29 +11,37 @@
 
     <!-- ===== ШАПКА ===== -->
     <div class="header">
-        <div class="title">🌿 MEGA GARDEN 4</div>
+        <div class="title">🌿 OUR GARDEN</div>
         <div class="coins" id="coinDisplay">
             <span class="coin-icon">🪙</span>
             <span class="coin-value">0.0</span>
         </div>
-        <button id="closeBtn" class="close-btn">✕</button>
     </div>
 
-    <!-- ===== ГРЯДКА (4x4) ===== -->
-    <div class="garden-grid" id="gardenGrid"></div>
+    <!-- ===== ПОЛЕ ДЛЯ РАСТЕНИЙ ===== -->
+    <div class="garden-area" id="gardenArea">
+        <!-- Растения будут появляться здесь -->
+    </div>
 
-    <!-- ===== 3D КНОПКА-КЛИКЕР ===== -->
-    <div class="ground-3d" id="ground">
-        <div class="ground-inner">
-            <div class="ground-emoji">🌍</div>
-            <div class="ground-text">👇 ТЫКАЙ СЮДА!</div>
+    <!-- ===== КРУГЛАЯ КНОПКА-КЛИКЕР ===== -->
+    <div class="clicker-container">
+        <div class="clicker-btn" id="ground">
+            <div class="clicker-inner">
+                <span class="clicker-emoji">🌍</span>
+                <span class="clicker-text">ТЫКАЙ!</span>
+            </div>
+            <div class="clicker-shine"></div>
+            <div class="float-text" id="floatText"></div>
         </div>
-        <div class="ground-shine"></div>
-        <div class="float-text" id="floatText"></div>
     </div>
 
-    <!-- ===== МАГАЗИН ===== -->
-    <div class="shop" id="shop"></div>
+    <!-- ===== МАГАЗИН СЕМЯН (РУС/АНГЛ) ===== -->
+    <div class="shop" id="shop">
+        <!-- Заполняется скриптом -->
+    </div>
+
+    <!-- ===== КНОПКА СМЕНЫ ЯЗЫКА ===== -->
+    <button class="lang-btn" id="langBtn">🇬🇧 EN</button>
 
     <script src="game.js"></script>
 </body>
