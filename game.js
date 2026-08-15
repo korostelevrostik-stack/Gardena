@@ -1,32 +1,33 @@
-// ========== 10 РАСТЕНИЙ ==========
+// ========== ДАННЫЕ ==========
 const PLANTS = [
-    { id: 'grass',    emoji: '🌱', cost: 30,   growTime: 8,  reward: 8,  name: 'Трава' },
-    { id: 'bush',     emoji: '🌿', cost: 60,   growTime: 12, reward: 15, name: 'Куст' },
-    { id: 'flower',   emoji: '🌸', cost: 120,  growTime: 16, reward: 30, name: 'Цветок' },
-    { id: 'sunflower',emoji: '🌻', cost: 250,  growTime: 20, reward: 55, name: 'Подсолнух' },
-    { id: 'apple',    emoji: '🌳', cost: 500,  growTime: 25, reward: 100, name: 'Яблоня' },
-    { id: 'grape',    emoji: '🍇', cost: 1000, growTime: 30, reward: 200, name: 'Виноград' },
-    { id: 'orange',   emoji: '🍊', cost: 2000, growTime: 35, reward: 380, name: 'Апельсин' },
-    { id: 'rose',     emoji: '🌺', cost: 4000, growTime: 40, reward: 700, name: 'Роза' },
-    { id: 'mushroom', emoji: '🍄', cost: 7000, growTime: 45, reward: 1200, name: 'Гриб' },
-    { id: 'golden',   emoji: '🌟', cost: 10000, growTime: 50, reward: 2000, name: 'Золотое' }
+    { id: 'grass',    emoji: '🌱', cost: 30,   growTime: 10, reward: 8,  name: 'Трава', nameEn: 'Grass' },
+    { id: 'bush',     emoji: '🌿', cost: 60,   growTime: 15, reward: 15, name: 'Куст', nameEn: 'Bush' },
+    { id: 'flower',   emoji: '🌸', cost: 120,  growTime: 20, reward: 30, name: 'Цветок', nameEn: 'Flower' },
+    { id: 'sunflower',emoji: '🌻', cost: 250,  growTime: 25, reward: 55, name: 'Подсолнух', nameEn: 'Sunflower' },
+    { id: 'apple',    emoji: '🌳', cost: 500,  growTime: 30, reward: 100, name: 'Яблоня', nameEn: 'Apple Tree' },
+    { id: 'grape',    emoji: '🍇', cost: 1000, growTime: 35, reward: 200, name: 'Виноград', nameEn: 'Grape' },
+    { id: 'orange',   emoji: '🍊', cost: 2000, growTime: 40, reward: 380, name: 'Апельсин', nameEn: 'Orange' },
+    { id: 'rose',     emoji: '🌺', cost: 4000, growTime: 45, reward: 700, name: 'Роза', nameEn: 'Rose' },
+    { id: 'mushroom', emoji: '🍄', cost: 7000, growTime: 50, reward: 1200, name: 'Гриб', nameEn: 'Mushroom' },
+    { id: 'golden',   emoji: '🌟', cost: 10000, growTime: 55, reward: 2000, name: 'Золотое', nameEn: 'Golden' }
 ];
 
 // ========== СОСТОЯНИЕ ==========
 let state = {
     coins: 0,
-    cells: Array(16).fill(null),
-    selectedPlant: null
+    plants: [], // { plantId, plantedAt, growing, plantIndex }
+    selectedPlant: null,
+    lang: 'ru' // 'ru' или 'en'
 };
 
 // ========== DOM ==========
 const coinDisplay = document.getElementById('coinDisplay');
 const coinValue = coinDisplay.querySelector('.coin-value');
-const grid = document.getElementById('gardenGrid');
+const gardenArea = document.getElementById('gardenArea');
 const ground = document.getElementById('ground');
 const floatContainer = document.getElementById('floatText');
 const shop = document.getElementById('shop');
-const closeBtn = document.getElementById('closeBtn');
+const langBtn = document.getElementById('langBtn');
 
 // ========== ЗАГРУЗКА ==========
 function loadState() {
@@ -34,12 +35,14 @@ function loadState() {
         const saved = JSON.parse(localStorage.getItem('gardenGame'));
         if (saved) {
             state.coins = saved.coins || 0;
-            state.cells = saved.cells || Array(16).fill(null);
-            state.cells.forEach((cell, i) => {
-                if (cell && cell.growing) {
-                    const plant = PLANTS[cell.plantIndex];
-                    const elapsed = (Date.now() - cell.plantedAt) / 1000;
-                    if (elapsed >= plant.growTime) cell.growing = false;
+            state.plants = saved.plants || [];
+            state.lang = saved.lang || 'ru';
+            // Пересчёт времени
+            state.plants.forEach(p => {
+                if (p.growing) {
+                    const plant = PLANTS[p.plantIndex];
+                    const elapsed = (Date.now() - p.plantedAt) / 1000;
+                    if (elapsed >= plant.growTime) p.growing = false;
                 }
             });
         }
@@ -51,162 +54,139 @@ function saveState() {
     localStorage.setItem('gardenGame', JSON.stringify(state));
 }
 
-// ========== ОТРИСОВКА ГРЯДКИ С КРУГОВЫМ ТАЙМЕРОМ ==========
-function renderGrid() {
-    grid.innerHTML = '';
-    state.cells.forEach((cell, index) => {
-        const div = document.createElement('div');
-        div.className = 'cell' + (cell ? '' : ' empty');
-        div.dataset.index = index;
-
-        if (cell) {
-            const plant = PLANTS[cell.plantIndex];
-            const emoji = document.createElement('span');
-            emoji.className = 'plant-emoji';
-            emoji.textContent = plant.emoji;
-            div.appendChild(emoji);
-
-            if (cell.growing) {
-                // Рисуем круговой прогресс
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('class', 'progress-ring');
-                svg.setAttribute('viewBox', '0 0 100 100');
-                
-                const radius = 42;
-                const circumference = 2 * Math.PI * radius;
-                
-                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                bg.setAttribute('class', 'bg');
-                bg.setAttribute('cx', '50');
-                bg.setAttribute('cy', '50');
-                bg.setAttribute('r', radius);
-                
-                const bar = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                bar.setAttribute('class', 'bar');
-                bar.setAttribute('cx', '50');
-                bar.setAttribute('cy', '50');
-                bar.setAttribute('r', radius);
-                bar.setAttribute('stroke-dasharray', circumference);
-                
-                const elapsed = (Date.now() - cell.plantedAt) / 1000;
-                const progress = Math.min(1, elapsed / plant.growTime);
-                const offset = circumference * (1 - progress);
-                bar.setAttribute('stroke-dashoffset', offset);
-                
-                svg.appendChild(bg);
-                svg.appendChild(bar);
-                div.appendChild(svg);
-            } else {
-                div.classList.add('ready');
-                div.style.cursor = 'pointer';
-                div.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    harvestPlant(index);
-                });
-            }
-        } else {
-            div.addEventListener('click', (e) => {
-                e.stopPropagation();
-                plantSeed(index);
-            });
-        }
-        grid.appendChild(div);
-    });
-    updateCoins();
+// ========== ОТРИСОВКА ==========
+function render() {
+    renderGarden();
     renderShop();
+    updateCoins();
+    updateLangBtn();
 }
 
-// ========== МОНЕТКИ С АНИМАЦИЕЙ ==========
-function updateCoins() {
-    const current = parseFloat(coinValue.textContent) || 0;
-    const target = state.coins;
-    
-    // Анимируем изменение счёта
-    if (Math.abs(current - target) > 0.01) {
-        coinValue.textContent = target.toFixed(1);
-    } else {
-        coinValue.textContent = target.toFixed(1);
+// ===== ГРЯДКА =====
+function renderGarden() {
+    if (state.plants.length === 0) {
+        gardenArea.innerHTML = `<div class="garden-area-empty">🌱 Посади своё первое растение!</div>`;
+        return;
     }
-    
-    // Анимация монетки при изменении
-    const icon = coinDisplay.querySelector('.coin-icon');
-    icon.style.transform = 'scale(1.3)';
-    setTimeout(() => { icon.style.transform = 'scale(1)'; }, 150);
-    
+
+    gardenArea.innerHTML = '';
+    state.plants.forEach((p, index) => {
+        const plant = PLANTS[p.plantIndex];
+        const div = document.createElement('div');
+        div.className = 'garden-plant';
+
+        const emoji = document.createElement('span');
+        emoji.className = 'plant-emoji';
+        emoji.textContent = plant.emoji;
+        div.appendChild(emoji);
+
+        // Таймер или кнопка сбора
+        if (p.growing) {
+            const elapsed = (Date.now() - p.plantedAt) / 1000;
+            const remaining = Math.max(0, plant.growTime - elapsed);
+            const timer = document.createElement('span');
+            timer.className = 'plant-timer';
+            timer.textContent = formatTime(remaining);
+            timer.dataset.index = index;
+            div.appendChild(timer);
+        } else {
+            const ready = document.createElement('span');
+            ready.className = 'plant-ready';
+            ready.textContent = state.lang === 'ru' ? '✅ Собрать!' : '✅ Harvest!';
+            div.appendChild(ready);
+            div.style.cursor = 'pointer';
+            div.addEventListener('click', () => harvestPlant(index));
+        }
+
+        // Название
+        const name = document.createElement('span');
+        name.className = 'plant-name-label';
+        name.textContent = state.lang === 'ru' ? plant.name : plant.nameEn;
+        div.appendChild(name);
+
+        gardenArea.appendChild(div);
+    });
+}
+
+// ===== МОНЕТКИ =====
+function updateCoins() {
+    coinValue.textContent = state.coins.toFixed(1);
     saveState();
 }
 
-// ========== 3D КЛИК ==========
+// ===== ФОРМАТ ВРЕМЕНИ =====
+function formatTime(seconds) {
+    if (seconds < 60) return Math.ceil(seconds) + 's';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.ceil(seconds % 60);
+    return mins + 'm ' + secs + 's';
+}
+
+// ===== КЛИК ПО КНОПКЕ =====
 ground.addEventListener('click', (e) => {
     const earned = 0.3;
     state.coins += earned;
     updateCoins();
-    showFloatingText('+0.3 🪙', e);
+    showFloatingText('+' + earned.toFixed(1) + ' 🪙', e);
+    // Вибрация
+    if (navigator.vibrate) navigator.vibrate(10);
 });
 
-// ========== ВСПЛЫВАЮЩИЕ МОНЕТКИ ==========
-function showFloatingText(text, eventOrElement) {
+// ===== ВСПЛЫВАЮЩИЙ ТЕКСТ =====
+function showFloatingText(text, event) {
     const el = document.createElement('div');
     el.className = 'float-item';
     el.textContent = text;
-    
-    if (eventOrElement && eventOrElement.clientX) {
-        const rect = floatContainer.getBoundingClientRect();
-        const x = ((eventOrElement.clientX - rect.left) / rect.width) * 100;
-        const y = ((eventOrElement.clientY - rect.top) / rect.height) * 100;
-        el.style.left = Math.min(85, Math.max(15, x)) + '%';
-        el.style.top = Math.min(80, Math.max(10, y)) + '%';
-    } else {
-        el.style.left = (20 + Math.random() * 60) + '%';
-        el.style.top = (20 + Math.random() * 40) + '%';
-    }
-    
+    const rect = floatContainer.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    el.style.left = Math.min(85, Math.max(15, x)) + '%';
+    el.style.top = Math.min(80, Math.max(10, y)) + '%';
     floatContainer.appendChild(el);
     setTimeout(() => el.remove(), 800);
 }
 
-// ========== ПОСАДКА ==========
-function plantSeed(index) {
+// ===== ПОСАДКА =====
+function plantSeed() {
     if (state.selectedPlant === null) {
-        showFloatingText('👆 Выбери растение!', ground);
+        showFloatingText('👆 Выбери семечко!', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
         return;
     }
     const plant = PLANTS[state.selectedPlant];
     if (!plant) return;
     if (state.coins < plant.cost) {
-        showFloatingText('❌ Нужно ' + plant.cost + '🪙', ground);
+        showFloatingText('❌ Нужно ' + plant.cost + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
         return;
     }
-    if (state.cells[index] !== null) {
-        showFloatingText('❌ Занято!', grid.children[index]);
-        return;
-    }
+
     state.coins -= plant.cost;
-    state.cells[index] = {
+    state.plants.push({
         plantIndex: state.selectedPlant,
         plantedAt: Date.now(),
         growing: true
-    };
-    updateCoins();
-    renderGrid();
+    });
+
     state.selectedPlant = null;
-    document.querySelectorAll('.shop-btn').forEach(b => b.classList.remove('selected'));
-    showFloatingText('🌱 ' + plant.name + ' посажено!', ground);
-}
-
-// ========== СБОР ==========
-function harvestPlant(index) {
-    const cell = state.cells[index];
-    if (!cell || cell.growing) return;
-    const plant = PLANTS[cell.plantIndex];
-    state.coins += plant.reward;
-    state.cells[index] = null;
     updateCoins();
-    renderGrid();
-    showFloatingText('🎉 +' + plant.reward + '🪙', grid);
+    render();
+    showFloatingText('🌱 ' + (state.lang === 'ru' ? 'Посажено!' : 'Planted!'), { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    if (navigator.vibrate) navigator.vibrate(20);
 }
 
-// ========== МАГАЗИН ==========
+// ===== СБОР =====
+function harvestPlant(index) {
+    const p = state.plants[index];
+    if (!p || p.growing) return;
+    const plant = PLANTS[p.plantIndex];
+    state.coins += plant.reward;
+    state.plants.splice(index, 1);
+    updateCoins();
+    render();
+    showFloatingText('🎉 +' + plant.reward + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// ===== МАГАЗИН =====
 function renderShop() {
     shop.innerHTML = '';
     PLANTS.forEach((plant, idx) => {
@@ -215,70 +195,83 @@ function renderShop() {
         if (state.selectedPlant === idx) btn.classList.add('selected');
         if (state.coins < plant.cost) btn.disabled = true;
 
+        const nameDisplay = state.lang === 'ru' ? plant.name : plant.nameEn;
+        const nameEnDisplay = state.lang === 'ru' ? plant.nameEn : '';
+
         btn.innerHTML = `
             <span class="shop-left">
                 <span class="shop-emoji">${plant.emoji}</span>
-                <span class="shop-name">${plant.name}</span>
+                <span>
+                    <span class="shop-name">${nameDisplay}</span>
+                    ${nameEnDisplay ? `<span class="shop-name-en">${nameEnDisplay}</span>` : ''}
+                </span>
             </span>
             <span class="shop-cost">${plant.cost}🪙</span>
         `;
 
         btn.addEventListener('click', () => {
             if (state.coins < plant.cost) {
-                showFloatingText('❌ Нужно ' + plant.cost + '🪙', ground);
+                showFloatingText('❌ Нужно ' + plant.cost + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
                 return;
             }
-            state.selectedPlant = (state.selectedPlant === idx) ? null : idx;
-            renderShop();
-            renderGrid();
-            if (state.selectedPlant !== null) {
-                showFloatingText('✅ ' + plant.name + ' выбран!', ground);
+            if (state.selectedPlant === idx) {
+                state.selectedPlant = null;
+            } else {
+                state.selectedPlant = idx;
+                // Автоматически сажаем
+                plantSeed();
+                return;
             }
+            render();
         });
+
         shop.appendChild(btn);
     });
 }
 
-// ========== ОБНОВЛЕНИЕ ТАЙМЕРОВ (КАЖДУЮ СЕКУНДУ) ==========
+// ===== ОБНОВЛЕНИЕ ТАЙМЕРОВ =====
 setInterval(() => {
     let needRender = false;
-    state.cells.forEach((cell, index) => {
-        if (cell && cell.growing) {
-            const plant = PLANTS[cell.plantIndex];
-            const elapsed = (Date.now() - cell.plantedAt) / 1000;
+    state.plants.forEach((p, index) => {
+        if (p.growing) {
+            const plant = PLANTS[p.plantIndex];
+            const elapsed = (Date.now() - p.plantedAt) / 1000;
             if (elapsed >= plant.growTime) {
-                cell.growing = false;
+                p.growing = false;
                 needRender = true;
             }
         }
     });
-    if (needRender) renderGrid();
+    if (needRender) render();
     else {
-        // Обновляем только прогресс-бары без перерисовки
-        document.querySelectorAll('.cell .progress-ring .bar').forEach((bar, idx) => {
-            const cellData = state.cells[idx];
-            if (cellData && cellData.growing) {
-                const plant = PLANTS[cellData.plantIndex];
-                const elapsed = (Date.now() - cellData.plantedAt) / 1000;
-                const progress = Math.min(1, elapsed / plant.growTime);
-                const radius = 42;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference * (1 - progress);
-                bar.setAttribute('stroke-dashoffset', offset);
+        // Обновляем таймеры на лету
+        document.querySelectorAll('.plant-timer').forEach(el => {
+            const index = parseInt(el.dataset.index);
+            const p = state.plants[index];
+            if (p && p.growing) {
+                const plant = PLANTS[p.plantIndex];
+                const elapsed = (Date.now() - p.plantedAt) / 1000;
+                const remaining = Math.max(0, plant.growTime - elapsed);
+                el.textContent = formatTime(remaining);
             }
         });
     }
     saveState();
-}, 300); // Обновляем каждые 300мс для плавности
+}, 500);
 
-// ========== ЗАКРЫТЬ ==========
-closeBtn.addEventListener('click', () => {
-    if (window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
+// ===== ЯЗЫК =====
+function updateLangBtn() {
+    langBtn.textContent = state.lang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
+}
+
+langBtn.addEventListener('click', () => {
+    state.lang = state.lang === 'ru' ? 'en' : 'ru';
+    saveState();
+    render();
 });
 
-// ========== СТАРТ ==========
-renderGrid();
-renderShop();
+// ===== ЗАПУСК =====
+render();
 if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
