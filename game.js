@@ -15,9 +15,9 @@ const PLANTS = [
 // ========== СОСТОЯНИЕ ==========
 let state = {
     coins: 0,
-    plants: [], // { plantId, plantedAt, growing, plantIndex }
+    plants: [],
     selectedPlant: null,
-    lang: 'ru' // 'ru' или 'en'
+    lang: 'ru'
 };
 
 // ========== DOM ==========
@@ -27,7 +27,14 @@ const gardenArea = document.getElementById('gardenArea');
 const ground = document.getElementById('ground');
 const floatContainer = document.getElementById('floatText');
 const shop = document.getElementById('shop');
+const shopOverlay = document.getElementById('shopOverlay');
+const miniGame = document.getElementById('miniGame');
+const levelDisplay = document.getElementById('levelDisplay');
 const langBtn = document.getElementById('langBtn');
+const miniGameBtn = document.getElementById('miniGameBtn');
+const shopBtn = document.getElementById('shopBtn');
+const closeGame = document.getElementById('closeGame');
+const closeShop = document.getElementById('closeShop');
 
 // ========== ЗАГРУЗКА ==========
 function loadState() {
@@ -37,7 +44,6 @@ function loadState() {
             state.coins = saved.coins || 0;
             state.plants = saved.plants || [];
             state.lang = saved.lang || 'ru';
-            // Пересчёт времени
             state.plants.forEach(p => {
                 if (p.growing) {
                     const plant = PLANTS[p.plantIndex];
@@ -68,7 +74,6 @@ function renderGarden() {
         gardenArea.innerHTML = `<div class="garden-area-empty">🌱 Посади своё первое растение!</div>`;
         return;
     }
-
     gardenArea.innerHTML = '';
     state.plants.forEach((p, index) => {
         const plant = PLANTS[p.plantIndex];
@@ -80,7 +85,6 @@ function renderGarden() {
         emoji.textContent = plant.emoji;
         div.appendChild(emoji);
 
-        // Таймер или кнопка сбора
         if (p.growing) {
             const elapsed = (Date.now() - p.plantedAt) / 1000;
             const remaining = Math.max(0, plant.growTime - elapsed);
@@ -98,12 +102,10 @@ function renderGarden() {
             div.addEventListener('click', () => harvestPlant(index));
         }
 
-        // Название
         const name = document.createElement('span');
         name.className = 'plant-name-label';
         name.textContent = state.lang === 'ru' ? plant.name : plant.nameEn;
         div.appendChild(name);
-
         gardenArea.appendChild(div);
     });
 }
@@ -112,6 +114,17 @@ function renderGarden() {
 function updateCoins() {
     coinValue.textContent = state.coins.toFixed(1);
     saveState();
+    checkAutoPurchase();
+}
+
+// ===== АВТОПОКУПКА =====
+function checkAutoPurchase() {
+    if (state.selectedPlant !== null) {
+        const plant = PLANTS[state.selectedPlant];
+        if (plant && state.coins >= plant.cost) {
+            buyPlant();
+        }
+    }
 }
 
 // ===== ФОРМАТ ВРЕМЕНИ =====
@@ -122,13 +135,12 @@ function formatTime(seconds) {
     return mins + 'm ' + secs + 's';
 }
 
-// ===== КЛИК ПО КНОПКЕ =====
+// ===== КЛИК =====
 ground.addEventListener('click', (e) => {
     const earned = 0.3;
     state.coins += earned;
     updateCoins();
     showFloatingText('+' + earned.toFixed(1) + ' 🪙', e);
-    // Вибрация
     if (navigator.vibrate) navigator.vibrate(10);
 });
 
@@ -146,18 +158,11 @@ function showFloatingText(text, event) {
     setTimeout(() => el.remove(), 800);
 }
 
-// ===== ПОСАДКА =====
-function plantSeed() {
-    if (state.selectedPlant === null) {
-        showFloatingText('👆 Выбери семечко!', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
-        return;
-    }
+// ===== ПОКУПКА =====
+function buyPlant() {
+    if (state.selectedPlant === null) return;
     const plant = PLANTS[state.selectedPlant];
-    if (!plant) return;
-    if (state.coins < plant.cost) {
-        showFloatingText('❌ Нужно ' + plant.cost + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
-        return;
-    }
+    if (!plant || state.coins < plant.cost) return;
 
     state.coins -= plant.cost;
     state.plants.push({
@@ -171,6 +176,7 @@ function plantSeed() {
     render();
     showFloatingText('🌱 ' + (state.lang === 'ru' ? 'Посажено!' : 'Planted!'), { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
     if (navigator.vibrate) navigator.vibrate(20);
+    closeShopPanel();
 }
 
 // ===== СБОР =====
@@ -218,16 +224,52 @@ function renderShop() {
                 state.selectedPlant = null;
             } else {
                 state.selectedPlant = idx;
-                // Автоматически сажаем
-                plantSeed();
-                return;
+                buyPlant();
             }
+            renderShop();
             render();
         });
-
         shop.appendChild(btn);
     });
 }
+
+// ===== МАГАЗИН (ОТКРЫТЬ/ЗАКРЫТЬ) =====
+shopBtn.addEventListener('click', () => {
+    shopOverlay.style.display = 'flex';
+    renderShop();
+});
+
+function closeShopPanel() {
+    shopOverlay.style.display = 'none';
+}
+closeShop.addEventListener('click', closeShopPanel);
+shopOverlay.addEventListener('click', (e) => {
+    if (e.target === shopOverlay) closeShopPanel();
+});
+
+// ===== МИНИ-ИГРА (ОТКРЫТЬ/ЗАКРЫТЬ) =====
+miniGameBtn.addEventListener('click', () => {
+    miniGame.style.display = 'block';
+    levelDisplay.textContent = match3.level || 1;
+    initMatch3(match3.level || 1, (reward) => {
+        state.coins += reward;
+        updateCoins();
+        showFloatingText('+' + reward + ' 🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    });
+});
+
+closeGame.addEventListener('click', closeMatch3);
+
+// ===== ЯЗЫК =====
+function updateLangBtn() {
+    langBtn.textContent = state.lang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
+}
+
+langBtn.addEventListener('click', () => {
+    state.lang = state.lang === 'ru' ? 'en' : 'ru';
+    saveState();
+    render();
+});
 
 // ===== ОБНОВЛЕНИЕ ТАЙМЕРОВ =====
 setInterval(() => {
@@ -244,7 +286,6 @@ setInterval(() => {
     });
     if (needRender) render();
     else {
-        // Обновляем таймеры на лету
         document.querySelectorAll('.plant-timer').forEach(el => {
             const index = parseInt(el.dataset.index);
             const p = state.plants[index];
@@ -258,17 +299,6 @@ setInterval(() => {
     }
     saveState();
 }, 500);
-
-// ===== ЯЗЫК =====
-function updateLangBtn() {
-    langBtn.textContent = state.lang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
-}
-
-langBtn.addEventListener('click', () => {
-    state.lang = state.lang === 'ru' ? 'en' : 'ru';
-    saveState();
-    render();
-});
 
 // ===== ЗАПУСК =====
 render();
