@@ -10,7 +10,9 @@ let match3 = {
     level: 1,
     size: 6,
     onWin: null,
-    processing: false // блокируем клики во время обработки
+    processing: false,
+    obstaclesDestroyed: 0,
+    totalObstacles: 0
 };
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -20,9 +22,11 @@ function initMatch3(level, callback) {
     match3.active = true;
     match3.selected = null;
     match3.processing = false;
+    match3.obstaclesDestroyed = 0;
     
     const size = match3.size;
-    const numObstacles = Math.min(level, 8);
+    const numObstacles = Math.min(level + 2, 10); // +2 за уровень
+    match3.totalObstacles = numObstacles;
     let board = [];
     const emojiPool = [...MATCH3_EMOJIS];
     
@@ -43,7 +47,7 @@ function initMatch3(level, callback) {
     // Перемешиваем
     shuffleBoard(board);
     
-    // Проверяем, есть ли комбинации — если есть, перемешиваем заново
+    // Проверяем, есть ли комбинации
     let attempts = 0;
     while (findMatch3Matches(board).length > 0 && attempts < 20) {
         shuffleBoard(board);
@@ -52,7 +56,7 @@ function initMatch3(level, callback) {
     
     match3.board = board;
     renderMatch3();
-    updateMatch3Status('Собери 3 одинаковых!');
+    updateMatch3Status(`🧱 Осталось: ${numObstacles} препятствий`);
 }
 
 // ===== ПЕРЕМЕШИВАНИЕ =====
@@ -63,13 +67,12 @@ function shuffleBoard(board) {
     }
 }
 
-// ===== ПОИСК КОМБИНАЦИЙ (с параметром board) =====
+// ===== ПОИСК КОМБИНАЦИЙ =====
 function findMatch3Matches(board) {
     const size = match3.size;
     const matches = new Set();
     board = board || match3.board;
     
-    // Горизонтальные
     for (let row = 0; row < size; row++) {
         for (let col = 0; col < size - 2; col++) {
             const idx1 = row * size + col;
@@ -88,7 +91,6 @@ function findMatch3Matches(board) {
         }
     }
     
-    // Вертикальные
     for (let row = 0; row < size - 2; row++) {
         for (let col = 0; col < size; col++) {
             const idx1 = row * size + col;
@@ -110,6 +112,35 @@ function findMatch3Matches(board) {
     return Array.from(matches);
 }
 
+// ===== ПОИСК ПРЕПЯТСТВИЙ РЯДОМ =====
+function findAdjacentObstacles(matchIndices) {
+    const size = match3.size;
+    const obstacles = new Set();
+    const directions = [-1, 1, -size, size];
+    
+    matchIndices.forEach(idx => {
+        const row = Math.floor(idx / size);
+        const col = idx % size;
+        
+        directions.forEach(delta => {
+            const newIdx = idx + delta;
+            if (newIdx >= 0 && newIdx < size * size) {
+                const newRow = Math.floor(newIdx / size);
+                const newCol = newIdx % size;
+                // Проверяем, что не вышли за границы ряда
+                if (Math.abs(row - newRow) + Math.abs(col - newCol) === 1) {
+                    const cell = match3.board[newIdx];
+                    if (cell && cell.isObstacle) {
+                        obstacles.add(newIdx);
+                    }
+                }
+            }
+        });
+    });
+    
+    return Array.from(obstacles);
+}
+
 // ===== ОТРИСОВКА =====
 function renderMatch3() {
     const boardEl = document.getElementById('gameBoard');
@@ -122,6 +153,10 @@ function renderMatch3() {
         if (cell.isObstacle) {
             div.classList.add('obstacle');
             div.textContent = cell.emoji;
+            // Добавляем анимацию, если препятствие вот-вот разрушится
+            if (cell.destroying) {
+                div.style.animation = 'obstacleDestroy 0.5s ease forwards';
+            }
         } else {
             div.textContent = cell.emoji;
             div.addEventListener('click', () => onMatch3Click(index));
@@ -151,7 +186,6 @@ function onMatch3Click(index) {
         return;
     }
 
-    // Пробуем поменять местами
     const firstIndex = match3.selected;
     const first = match3.board[firstIndex];
     const second = match3.board[index];
@@ -162,39 +196,62 @@ function onMatch3Click(index) {
         return;
     }
 
-    // Меняем местами
     [match3.board[firstIndex], match3.board[index]] = [match3.board[index], match3.board[firstIndex]];
 
-    // Проверяем совпадения
     const matches = findMatch3Matches(match3.board);
     if (matches.length > 0) {
         match3.selected = null;
         match3.processing = true;
+        
+        // Находим препятствия рядом с комбинацией
+        const adjacentObstacles = findAdjacentObstacles(matches);
+        
+        // Разрушаем препятствия
+        if (adjacentObstacles.length > 0) {
+            adjacentObstacles.forEach(idx => {
+                match3.board[idx] = { emoji: '✨', isObstacle: false };
+                match3.obstaclesDestroyed++;
+                // Даём бонус за разрушение
+                if (match3.onWin) {
+                    match3.onWin(5);
+                }
+            });
+            updateMatch3Status(`💥 Разрушено ${adjacentObstacles.length} препятствий! +${adjacentObstacles.length * 5}🪙`);
+        }
+        
         processMatches(matches, 0);
     } else {
-        // Меняем обратно
         [match3.board[firstIndex], match3.board[index]] = [match3.board[index], match3.board[firstIndex]];
         match3.selected = null;
         renderMatch3();
         updateMatch3Status('❌ Нет совпадений!');
         setTimeout(() => {
-            updateMatch3Status('Собери 3 одинаковых!');
+            updateMatch3Status(`🧱 Осталось: ${match3.totalObstacles - match3.obstaclesDestroyed} препятствий`);
         }, 800);
     }
 }
 
-// ===== ОБРАБОТКА КОМБИНАЦИЙ С ЗАДЕРЖКОЙ =====
+// ===== ОБРАБОТКА КОМБИНАЦИЙ =====
 function processMatches(matches, depth) {
     if (matches.length === 0) {
-        // Проверяем, есть ли новые комбинации после падения
         const newMatches = findMatch3Matches(match3.board);
         if (newMatches.length > 0) {
-            // Есть новое комбо — обрабатываем с задержкой
+            // Проверяем препятствия рядом с новой комбинацией
+            const adjacentObstacles = findAdjacentObstacles(newMatches);
+            if (adjacentObstacles.length > 0) {
+                adjacentObstacles.forEach(idx => {
+                    match3.board[idx] = { emoji: '✨', isObstacle: false };
+                    match3.obstaclesDestroyed++;
+                    if (match3.onWin) {
+                        match3.onWin(5);
+                    }
+                });
+                updateMatch3Status(`💥 Разрушено ${adjacentObstacles.length} препятствий! +${adjacentObstacles.length * 5}🪙`);
+            }
             setTimeout(() => {
                 processMatches(newMatches, depth + 1);
             }, 400);
         } else {
-            // Комбинаций больше нет — проверяем победу
             match3.processing = false;
             checkMatch3Win();
         }
@@ -207,30 +264,37 @@ function processMatches(matches, depth) {
     });
     renderMatch3();
     
-    // Даём награду (увеличиваем за каждое комбо)
     const bonus = 10 + depth * 2;
     if (match3.onWin) {
         match3.onWin(bonus);
     }
     
     const comboText = depth === 0 ? '🎉 Совпадение!' : `🔥 Комбо x${depth + 1}!`;
-    updateMatch3Status(comboText + ` +${bonus}🪙`);
+    const remaining = match3.totalObstacles - match3.obstaclesDestroyed;
+    updateMatch3Status(`${comboText} +${bonus}🪙 | 🧱 Осталось: ${remaining}`);
     
-    // Заполняем пустые клетки с задержкой
     setTimeout(() => {
         fillMatch3Empty();
-        // Проверяем новые комбинации
         const newMatches = findMatch3Matches(match3.board);
         if (newMatches.length > 0) {
-            // Рекурсивно обрабатываем следующее комбо
+            // Проверяем препятствия рядом с новой комбинацией
+            const adjacentObstacles = findAdjacentObstacles(newMatches);
+            if (adjacentObstacles.length > 0) {
+                adjacentObstacles.forEach(idx => {
+                    match3.board[idx] = { emoji: '✨', isObstacle: false };
+                    match3.obstaclesDestroyed++;
+                    if (match3.onWin) {
+                        match3.onWin(5);
+                    }
+                });
+                updateMatch3Status(`💥 Разрушено ${adjacentObstacles.length} препятствий! +${adjacentObstacles.length * 5}🪙`);
+            }
             setTimeout(() => {
                 processMatches(newMatches, depth + 1);
             }, 300);
         } else {
-            // Комбинаций больше нет
             match3.processing = false;
             checkMatch3Win();
-            updateMatch3Status('Собери 3 одинаковых!');
         }
     }, 400);
 }
@@ -244,7 +308,6 @@ function fillMatch3Empty() {
         for (let row = size - 1; row >= 0; row--) {
             const idx = row * size + col;
             if (board[idx].emoji === '✨' || board[idx].emoji === undefined) {
-                // Находим сверху
                 let found = false;
                 for (let r = row - 1; r >= 0; r--) {
                     const aboveIdx = r * size + col;
@@ -255,7 +318,6 @@ function fillMatch3Empty() {
                         break;
                     }
                 }
-                // Если всё ещё пусто — генерируем новое
                 if (!found) {
                     const emoji = MATCH3_EMOJIS[Math.floor(Math.random() * MATCH3_EMOJIS.length)];
                     board[idx] = { emoji: emoji, isObstacle: false };
@@ -285,7 +347,7 @@ function checkMatch3Win() {
     
     if (!hasObstacles && !hasEmpty && !hasMatches) {
         match3.active = false;
-        updateMatch3Status('🎉 Уровень пройден!');
+        updateMatch3Status('🎉 Уровень пройден! Все препятствия разрушены!');
         match3.level++;
         document.getElementById('levelDisplay').textContent = match3.level;
         
@@ -299,7 +361,14 @@ function checkMatch3Win() {
             } else {
                 closeMatch3();
             }
-        }, 1200);
+        }, 1500);
+        return;
+    }
+    
+    // Обновляем статус, если есть препятствия
+    const remaining = match3.totalObstacles - match3.obstaclesDestroyed;
+    if (remaining > 0 && !hasMatches) {
+        updateMatch3Status(`🧱 Осталось: ${remaining} препятствий`);
     }
 }
 
