@@ -20,7 +20,7 @@
 
     <!-- ===== ПОЛЕ ДЛЯ РАСТЕНИЙ ===== -->
     <div class="garden-area" id="gardenArea">
-        <!-- Растения будут появляться здесь -->
+        <div class="garden-area-empty">🌱 Посади своё первое растение!</div>
     </div>
 
     <!-- ===== КРУГЛАЯ КНОПКА-КЛИКЕР ===== -->
@@ -35,12 +35,38 @@
         </div>
     </div>
 
-    <!-- ===== МАГАЗИН СЕМЯН (РУС/АНГЛ) ===== -->
-    <div class="shop" id="shop">
-        <!-- Заполняется скриптом -->
+    <!-- ===== КНОПКИ: МИНИ-ИГРА + МАГАЗИН ===== -->
+    <div class="action-buttons">
+        <button class="action-btn" id="miniGameBtn">🎮 Три в ряд</button>
+        <button class="action-btn" id="shopBtn">🏪 Магазин</button>
     </div>
 
-    <!-- ===== КНОПКА СМЕНЫ ЯЗЫКА ===== -->
+    <!-- ===== МИНИ-ИГРА (СКРЫТА ПО УМОЛЧАНИЮ) ===== -->
+    <div class="mini-game" id="miniGame" style="display:none;">
+        <div class="mini-game-header">
+            <span>🎮 Три в ряд</span>
+            <button class="close-game" id="closeGame">✕</button>
+        </div>
+        <div class="mini-game-info">
+            <span>Уровень: <span id="levelDisplay">1</span></span>
+            <span>Награда: 10 🪙</span>
+        </div>
+        <div class="game-board" id="gameBoard"></div>
+        <div class="game-status" id="gameStatus">Собери 3 одинаковых!</div>
+    </div>
+
+    <!-- ===== МАГАЗИН (СКРЫТ ПО УМОЛЧАНИЮ) ===== -->
+    <div class="shop-overlay" id="shopOverlay" style="display:none;">
+        <div class="shop-panel">
+            <div class="shop-header">
+                <span>🏪 Магазин семян</span>
+                <button class="close-shop" id="closeShop">✕</button>
+            </div>
+            <div class="shop" id="shop"></div>
+        </div>
+    </div>
+
+    <!-- ===== КНОПКА ЯЗЫКА ===== -->
     <button class="lang-btn" id="langBtn">🇬🇧 EN</button>
 
     <script src="game.js"></script>
