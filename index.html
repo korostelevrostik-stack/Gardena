@@ -9,7 +9,12 @@
 </head>
 <body>
 
-    <!-- ===== ШАПКА ===== -->
+    <!-- ===== РАСТЕНИЯ (САМЫЙ ВЕРХ) ===== -->
+    <div class="garden-area" id="gardenArea">
+        <div class="garden-area-empty">🌱 Посади своё первое растение!</div>
+    </div>
+
+    <!-- ===== ШАПКА: НАЗВАНИЕ + МОНЕТЫ ===== -->
     <div class="header">
         <div class="title">🌿 OUR GARDEN</div>
         <div class="coins" id="coinDisplay">
@@ -18,13 +23,14 @@
         </div>
     </div>
 
-    <!-- ===== ПОЛЕ ДЛЯ РАСТЕНИЙ ===== -->
-    <div class="garden-area" id="gardenArea">
-        <div class="garden-area-empty">🌱 Посади своё первое растение!</div>
+    <!-- ===== КНОПКИ: МАГАЗИН + ТРИ В РЯД ===== -->
+    <div class="action-buttons">
+        <button class="action-btn" id="shopBtn">🏪 Магазин</button>
+        <button class="action-btn" id="miniGameBtn">🎮 Три в ряд</button>
     </div>
 
-    <!-- ===== КРУГЛАЯ КНОПКА-КЛИКЕР ===== -->
-    <div class="clicker-container">
+    <!-- ===== ОГРОМНАЯ КРУГЛАЯ КНОПКА-КЛИКЕР (ВНИЗУ) ===== -->
+    <div class="clicker-wrapper">
         <div class="clicker-btn" id="ground">
             <div class="clicker-inner">
                 <span class="clicker-emoji">🌍</span>
@@ -35,46 +41,39 @@
         </div>
     </div>
 
-    <!-- ===== ЕЖЕДНЕВНЫЙ БОНУС ===== -->
-    <button class="daily-bonus-btn" id="dailyBonusBtn">
-        🎁 Ежедневный бонус (+0🪙)
-    </button>
-
-    <!-- ===== КНОПКИ: МИНИ-ИГРА + МАГАЗИН ===== -->
-    <div class="action-buttons">
-        <button class="action-btn" id="miniGameBtn">🎮 Три в ряд</button>
-        <button class="action-btn" id="shopBtn">🏪 Магазин</button>
+    <!-- ===== МИНИ-ИГРА (ПОВЕРХ) ===== -->
+    <div class="overlay" id="miniGameOverlay" style="display:none;">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <span>🎮 Три в ряд</span>
+                <button class="overlay-close" id="closeGame">✕</button>
+            </div>
+            <div class="mini-game-info">
+                <span>Уровень: <span id="levelDisplay">1</span></span>
+                <span>Награда: 10 🪙</span>
+            </div>
+            <div class="game-board" id="gameBoard"></div>
+            <div class="game-status" id="gameStatus">Собери 3 одинаковых!</div>
+        </div>
     </div>
 
-    <!-- ===== МИНИ-ИГРА ===== -->
-    <div class="mini-game" id="miniGame" style="display:none;">
-        <div class="mini-game-header">
-            <span>🎮 Три в ряд</span>
-            <button class="close-game" id="closeGame">✕</button>
-        </div>
-        <div class="mini-game-info">
-            <span>Уровень: <span id="levelDisplay">1</span></span>
-            <span>Награда: 10 🪙</span>
-        </div>
-        <div class="game-board" id="gameBoard"></div>
-        <div class="game-status" id="gameStatus">Собери 3 одинаковых!</div>
-    </div>
-
-    <!-- ===== МАГАЗИН ===== -->
-    <div class="shop-overlay" id="shopOverlay" style="display:none;">
-        <div class="shop-panel">
-            <div class="shop-header">
+    <!-- ===== МАГАЗИН (ПОВЕРХ) ===== -->
+    <div class="overlay" id="shopOverlay" style="display:none;">
+        <div class="overlay-content shop-content">
+            <div class="overlay-header">
                 <span>🏪 Магазин семян</span>
-                <button class="close-shop" id="closeShop">✕</button>
+                <button class="overlay-close" id="closeShop">✕</button>
             </div>
             <div class="shop" id="shop"></div>
         </div>
     </div>
 
-    <!-- ===== КНОПКА ЯЗЫКА ===== -->
+    <!-- ===== ЕЖЕДНЕВНЫЙ БОНУС (МАЛЕНЬКАЯ КНОПКА) ===== -->
+    <button class="daily-btn" id="dailyBonusBtn">🎁</button>
+
+    <!-- ===== ЯЗЫК ===== -->
     <button class="lang-btn" id="langBtn">🇬🇧 EN</button>
 
-    <!-- ===== СКРИПТЫ ===== -->
     <script src="match3.js"></script>
     <script src="game.js"></script>
 </body>
