@@ -14,7 +14,7 @@ let match3 = {
     obstaclesDestroyed: 0,
     totalObstacles: 0,
     matchCount: 0,
-    levelCompleted: false // флаг, чтобы не давать деньги дважды
+    levelCompleted: false
 };
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -276,10 +276,8 @@ function onMatch3Click(index) {
         match3.processing = true;
         match3.matchCount++;
         
-        // Находим препятствия рядом с комбинацией
         const adjacentObstacles = findAdjacentObstacles(matches);
         
-        // Разрушаем препятствия
         if (adjacentObstacles.length > 0) {
             adjacentObstacles.forEach(idx => {
                 match3.board[idx] = { emoji: '✨', isObstacle: false };
@@ -323,7 +321,6 @@ function processMatches(matches, depth) {
             }, 400);
         } else {
             match3.processing = false;
-            // Проверяем, есть ли доступные ходы
             if (!hasAvailableMoves()) {
                 updateMatch3Status('🔄 Нет ходов! Перемешиваю...');
                 setTimeout(() => {
@@ -338,13 +335,10 @@ function processMatches(matches, depth) {
         return;
     }
 
-    // Убираем совпадения
     matches.forEach(idx => {
         match3.board[idx] = { emoji: '✨', isObstacle: false };
     });
     renderMatch3();
-    
-    // НЕ ДАЁМ ДЕНЬГИ ЗА КОМБИНАЦИИ
     
     setTimeout(() => {
         fillMatch3Empty();
@@ -416,7 +410,6 @@ function checkMatch3Win() {
     const hasEmpty = board.some(cell => cell.emoji === '✨' || cell.emoji === undefined);
     const hasMatches = findMatch3Matches(board).length > 0;
     
-    // Если есть комбинации, но игра не в процессе — обрабатываем их
     if (hasMatches && !match3.processing) {
         const matches = findMatch3Matches(board);
         match3.processing = true;
@@ -424,20 +417,22 @@ function checkMatch3Win() {
         return;
     }
     
-    // Если все препятствия разрушены — УРОВЕНЬ ПРОЙДЕН!
     if (!hasObstacles && !hasEmpty && !hasMatches) {
         match3.levelCompleted = true;
         match3.active = false;
         
-        // ✅ ДАЁМ ДЕНЬГИ ЗА ПРОХОЖДЕНИЕ УРОВНЯ
-        const reward = 10 + match3.level * 2; // 12, 14, 16...
+        const reward = 10 + match3.level * 2;
         if (match3.onWin) {
             match3.onWin(reward);
         }
         
+        // ЗВУК ПОБЕДЫ
+        if (typeof SoundFX !== 'undefined') {
+            SoundFX.victory();
+        }
+        
         updateMatch3Status(`🎉 Уровень ${match3.level} пройден! +${reward}🪙`);
         
-        // ПОКАЗЫВАЕМ КРАСИВОЕ ОКНО ПЕРЕХОДА
         setTimeout(() => {
             showLevelCompleteModal(match3.level, reward);
         }, 500);
@@ -446,7 +441,6 @@ function checkMatch3Win() {
 
 // ===== КРАСИВОЕ ОКНО ПЕРЕХОДА =====
 function showLevelCompleteModal(level, reward) {
-    // Удаляем старое окно, если есть
     const oldModal = document.querySelector('.level-modal');
     if (oldModal) oldModal.remove();
     
@@ -465,92 +459,8 @@ function showLevelCompleteModal(level, reward) {
         </div>
     `;
     
-    // Стили для модального окна (встроенные)
-    const style = document.createElement('style');
-    style.textContent = `
-        .level-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            animation: modalFadeIn 0.4s ease;
-        }
-        @keyframes modalFadeIn {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .level-modal-content {
-            background: #f5f0e8;
-            border-radius: 28px;
-            padding: 32px 28px;
-            max-width: 340px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: modalBounce 0.5s cubic-bezier(0.2, 0.8, 0.4, 1);
-        }
-        @keyframes modalBounce {
-            0% { transform: scale(0.5) rotate(-3deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        .level-modal-icon { font-size: 56px; margin-bottom: 8px; }
-        .level-modal-title { 
-            font-size: 24px; 
-            font-weight: 800; 
-            color: #2d5a2d; 
-            margin-bottom: 4px;
-        }
-        .level-modal-reward { 
-            font-size: 32px; 
-            font-weight: 700; 
-            color: #e6a800;
-            margin-bottom: 12px;
-            text-shadow: 0 2px 10px rgba(230, 168, 0, 0.2);
-        }
-        .level-modal-stats {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            font-size: 13px;
-            color: #5a6a50;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .level-modal-stats span {
-            background: rgba(200, 220, 180, 0.3);
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-        .level-modal-btn {
-            background: linear-gradient(145deg, #4d8a4d, #2d5a2d);
-            border: none;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 700;
-            padding: 14px 32px;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #1a331a;
-            transition: 0.1s;
-            width: 100%;
-        }
-        .level-modal-btn:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 #1a331a;
-        }
-    `;
-    document.head.appendChild(style);
-    
     document.body.appendChild(modal);
     
-    // Кнопка "Следующий уровень"
     document.getElementById('nextLevelBtn').addEventListener('click', () => {
         modal.remove();
         match3.level++;
@@ -574,7 +484,6 @@ function closeMatch3() {
     match3.processing = false;
     match3.levelCompleted = false;
     document.getElementById('miniGame').style.display = 'none';
-    // Удаляем модальное окно, если есть
     const modal = document.querySelector('.level-modal');
     if (modal) modal.remove();
 }
