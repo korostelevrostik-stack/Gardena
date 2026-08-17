@@ -12,6 +12,163 @@ const PLANTS = [
     { id: 'golden',   emoji: '🌟', cost: 10000, growTime: 55, reward: 2000, name: 'Золотое', nameEn: 'Golden' }
 ];
 
+// ========== ЗВУКИ ==========
+const SoundFX = {
+    ctx: null,
+    
+    init() {
+        try {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+            console.log('Web Audio не поддерживается');
+        }
+    },
+    
+    playTone(freq, duration, type = 'sine', volume = 0.3) {
+        if (!this.ctx) return;
+        try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.value = volume;
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+    },
+    
+    click() {
+        this.playTone(800, 0.08, 'sine', 0.25);
+        setTimeout(() => this.playTone(1000, 0.06, 'sine', 0.15), 50);
+    },
+    
+    plant() {
+        this.playTone(600, 0.15, 'sine', 0.3);
+        setTimeout(() => this.playTone(400, 0.15, 'sine', 0.2), 100);
+        setTimeout(() => this.playTone(200, 0.2, 'sine', 0.15), 200);
+    },
+    
+    harvest() {
+        this.playTone(500, 0.1, 'sine', 0.25);
+        setTimeout(() => this.playTone(700, 0.1, 'sine', 0.2), 100);
+        setTimeout(() => this.playTone(900, 0.15, 'sine', 0.2), 200);
+        setTimeout(() => this.playTone(1100, 0.2, 'sine', 0.25), 300);
+    },
+    
+    victory() {
+        [0, 100, 200, 300, 400].forEach((delay, i) => {
+            setTimeout(() => {
+                this.playTone(600 + i * 80, 0.15, 'square', 0.15);
+            }, delay);
+        });
+        setTimeout(() => {
+            [0, 100, 200].forEach((delay, i) => {
+                setTimeout(() => {
+                    this.playTone(900 + i * 100, 0.2, 'square', 0.15);
+                }, delay);
+            });
+        }, 500);
+    },
+    
+    dailyBonus() {
+        this.playTone(400, 0.1, 'sine', 0.2);
+        setTimeout(() => this.playTone(500, 0.1, 'sine', 0.2), 100);
+        setTimeout(() => this.playTone(600, 0.1, 'sine', 0.2), 200);
+        setTimeout(() => this.playTone(800, 0.15, 'sine', 0.25), 300);
+        setTimeout(() => this.playTone(1000, 0.2, 'sine', 0.3), 400);
+    },
+    
+    error() {
+        this.playTone(300, 0.2, 'sawtooth', 0.15);
+        setTimeout(() => this.playTone(250, 0.2, 'sawtooth', 0.12), 150);
+    }
+};
+
+let soundInitialized = false;
+function initSound() {
+    if (!soundInitialized) {
+        SoundFX.init();
+        soundInitialized = true;
+    }
+}
+
+// ========== ЕЖЕДНЕВНЫЙ БОНУС ==========
+const DAILY_BONUS = {
+    min: 5,
+    max: 25,
+    lastClaim: null,
+    streak: 0
+};
+
+function loadDailyBonus() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('gardenDailyBonus'));
+        if (saved) {
+            DAILY_BONUS.lastClaim = saved.lastClaim;
+            DAILY_BONUS.streak = saved.streak || 0;
+        }
+    } catch(e) {}
+}
+loadDailyBonus();
+
+function saveDailyBonus() {
+    try {
+        localStorage.setItem('gardenDailyBonus', JSON.stringify({
+            lastClaim: DAILY_BONUS.lastClaim,
+            streak: DAILY_BONUS.streak
+        }));
+    } catch(e) {}
+}
+
+function canClaimDailyBonus() {
+    if (!DAILY_BONUS.lastClaim) return true;
+    const now = Date.now();
+    const last = new Date(DAILY_BONUS.lastClaim);
+    const today = new Date(now);
+    return last.getDate() !== today.getDate() || 
+           last.getMonth() !== today.getMonth() || 
+           last.getFullYear() !== today.getFullYear();
+}
+
+function getDailyBonusAmount() {
+    const base = 5 + DAILY_BONUS.streak * 2;
+    return Math.min(base, 50);
+}
+
+function claimDailyBonus() {
+    if (!canClaimDailyBonus()) {
+        showFloatingText('⏳ Уже получено! Завтра будет новый бонус.', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+        return;
+    }
+    
+    const amount = getDailyBonusAmount();
+    state.coins += amount;
+    DAILY_BONUS.lastClaim = Date.now();
+    DAILY_BONUS.streak++;
+    saveDailyBonus();
+    updateCoins();
+    SoundFX.dailyBonus();
+    showFloatingText('🎁 +' + amount + ' 🪙 (Стрик: ' + DAILY_BONUS.streak + ')', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    updateDailyBonusUI();
+}
+
+function updateDailyBonusUI() {
+    const btn = document.getElementById('dailyBonusBtn');
+    if (!btn) return;
+    if (canClaimDailyBonus()) {
+        btn.innerHTML = `🎁 Ежедневный бонус (+${getDailyBonusAmount()}🪙)`;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    } else {
+        btn.innerHTML = `⏳ Бонус уже получен`;
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    }
+}
+
 // ========== СОСТОЯНИЕ ==========
 let state = {
     coins: 0,
@@ -137,6 +294,9 @@ function formatTime(seconds) {
 
 // ===== КЛИК =====
 ground.addEventListener('click', (e) => {
+    initSound();
+    SoundFX.click();
+    
     const earned = 0.3;
     state.coins += earned;
     updateCoins();
@@ -162,7 +322,10 @@ function showFloatingText(text, event) {
 function buyPlant() {
     if (state.selectedPlant === null) return;
     const plant = PLANTS[state.selectedPlant];
-    if (!plant || state.coins < plant.cost) return;
+    if (!plant || state.coins < plant.cost) {
+        SoundFX.error();
+        return;
+    }
 
     state.coins -= plant.cost;
     state.plants.push({
@@ -171,6 +334,7 @@ function buyPlant() {
         growing: true
     });
 
+    SoundFX.plant();
     state.selectedPlant = null;
     updateCoins();
     render();
@@ -186,6 +350,7 @@ function harvestPlant(index) {
     const plant = PLANTS[p.plantIndex];
     state.coins += plant.reward;
     state.plants.splice(index, 1);
+    SoundFX.harvest();
     updateCoins();
     render();
     showFloatingText('🎉 +' + plant.reward + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
@@ -217,6 +382,7 @@ function renderShop() {
 
         btn.addEventListener('click', () => {
             if (state.coins < plant.cost) {
+                SoundFX.error();
                 showFloatingText('❌ Нужно ' + plant.cost + '🪙', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
                 return;
             }
@@ -299,6 +465,10 @@ setInterval(() => {
     }
     saveState();
 }, 500);
+
+// ===== ЕЖЕДНЕВНЫЙ БОНУС (ИНИЦИАЛИЗАЦИЯ) =====
+document.getElementById('dailyBonusBtn').addEventListener('click', claimDailyBonus);
+updateDailyBonusUI();
 
 // ===== ЗАПУСК =====
 render();
